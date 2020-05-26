@@ -1,0 +1,128 @@
+# Azure DevOps pipeline for deploying the core infrastructure for https://github.com/marain-dotnet
+
+name: marain-dotnet_deployment
+
+resources:
+  repositories:
+  - repository: MarainInstanceGithub
+    type: github
+    name: marain-dotnet/Marain.Instance
+    ref: master
+
+trigger: none
+
+variables:
+  Marain_InstanceType: Stable     # sets which release channel to use (options: Stable or Development)
+  Marain_ResourcePrefix: mar      # the naming-convention prefix for all resources
+
+stages:
+- stage: Download deployment system
+  displayName: Build stage
+  jobs:
+  - job: pull_deploy_sources
+    displayName: Pull deployment sources
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - checkout: MarainInstanceGithub
+
+    - publish: $(Build.SourcesDirectory)/Solutions
+      artifact: marain_instance
+
+
+- stage: Deploy DEV Instance
+  variables:
+    Marain_AzureLocation: <REPLACE_ME>          # The Azure location for the deployment
+    Marain_AzureSubscriptionId: <REPLACE_ME>    # The subscription ID into which Marain should be deployed
+    Marain_AzureTenantId: <REPLACE_ME>          # The Azure tenant ID for the above subscription
+    Marain_ServiceConnectionName: <REPLACE_ME>  # The name of the Azure DevOps AzureRM service connection with permissions to the above subscription
+    Marain_EnvironmentSuffix: <REPLACE_ME>      # This will form the suffix of the naming convention used when creating resources (e.g. 'dev', 'test', 'prod')
+  displayName: Deploy to 'dev' environment stage
+  jobs:
+  - deployment: deploy_dev
+    displayName: Deploy 'dev' instance
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: marain_dev
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: marain_instance
+
+          - template: azurepipeline-templates/deploy-marain-instance.yml@MarainInstanceGithub
+            parameters:
+              azureServiceConnection: $(Marain_ServiceConnectionName)
+              azureSubscriptionId: $(Marain_AzureSubscriptionId)
+              azureTenantId: $(Marain_AzureTenantId)
+              azureLocation: $(Marain_AzureLocation)
+              marainEnvironmentSuffix: $(Marain_EnvironmentSuffix)
+              marainInstanceType: $(Marain_InstanceType)
+              marainResourcePrefix: $(Marain_ResourcePrefix)
+              workingDirectory: $(Pipeline.Workspace)/marain_instance/Marain.Instance.Deployment
+
+- stage: Deploy TEST Instance
+  variables:
+    Marain_AzureLocation: <REPLACE_ME>
+    Marain_AzureSubscriptionId: <REPLACE_ME>
+    Marain_AzureTenantId: <REPLACE_ME>
+    Marain_ServiceConnectionName: <REPLACE_ME>
+    Marain_EnvironmentSuffix: <REPLACE_ME>
+  displayName: Deploy to 'test' environment stage
+  jobs:  
+  - deployment: deploy_test
+    displayName: Deploy 'test' instance
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: marain_test
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: marain_instance
+
+          - template: azurepipeline-templates/deploy-marain-instance.yml@MarainInstanceGithub
+            parameters:
+              azureServiceConnection: $(Marain_ServiceConnectionName)
+              azureSubscriptionId: $(Marain_AzureSubscriptionId)
+              azureTenantId: $(Marain_AzureTenantId)
+              azureLocation: $(Marain_AzureLocation)
+              marainEnvironmentSuffix: $(Marain_EnvironmentSuffix)
+              marainInstanceType: $(Marain_InstanceType)
+              marainResourcePrefix: $(Marain_ResourcePrefix)
+              workingDirectory: $(Pipeline.Workspace)/marain_instance/Marain.Instance.Deployment
+
+- stage: Deploy PROD Instance
+  variables:
+    Marain_AzureLocation: <REPLACE_ME>
+    Marain_AzureSubscriptionId: <REPLACE_ME>
+    Marain_AzureTenantId: <REPLACE_ME>
+    Marain_ServiceConnectionName: <REPLACE_ME>
+    Marain_EnvironmentSuffix: <REPLACE_ME>
+  displayName: Deploy to 'prod' environment stage
+  jobs: 
+  - deployment: deploy_prod
+    displayName: Deploy 'prod' instance
+    pool:
+      vmImage: 'ubuntu-latest'
+    environment: marain_prod
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - download: current
+            artifact: marain_instance
+
+          - template: azurepipeline-templates/deploy-marain-instance.yml@MarainInstanceGithub
+            parameters:
+              azureServiceConnection: $(Marain_ServiceConnectionName)
+              azureSubscriptionId: $(Marain_AzureSubscriptionId)
+              azureTenantId: $(Marain_AzureTenantId)
+              azureLocation: $(Marain_AzureLocation)
+              marainEnvironmentSuffix: $(Marain_EnvironmentSuffix)
+              marainInstanceType: $(Marain_InstanceType)
+              marainResourcePrefix: $(Marain_ResourcePrefix)
+              workingDirectory: $(Pipeline.Workspace)/marain_instance/Marain.Instance.Deployment
+                              
