@@ -8,6 +8,7 @@ resources:
     type: github
     name: marain-dotnet/Marain.Instance
     ref: master
+    endpoint: GitHubServiceConnection # this is the name of the service connection that needs to be created in ADO (needed even though repo is public)
 
 trigger: none
 
@@ -16,7 +17,7 @@ variables:
   Marain_ResourcePrefix: mar      # the naming-convention prefix for all resources
 
 stages:
-- stage: Download deployment system
+- stage: Download_deployment_system
   displayName: Build stage
   jobs:
   - job: pull_deploy_sources
@@ -30,7 +31,7 @@ stages:
       artifact: marain_instance
 
 
-- stage: Deploy DEV Instance
+- stage: Deploy_DEV_Instance
   variables:
     Marain_AzureLocation: <REPLACE_ME>          # The Azure location for the deployment
     Marain_AzureSubscriptionId: <REPLACE_ME>    # The subscription ID into which Marain should be deployed
@@ -62,7 +63,7 @@ stages:
               marainResourcePrefix: $(Marain_ResourcePrefix)
               workingDirectory: $(Pipeline.Workspace)/marain_instance/Marain.Instance.Deployment
 
-- stage: Deploy TEST Instance
+- stage: Deploy_TEST_Instance
   variables:
     Marain_AzureLocation: <REPLACE_ME>
     Marain_AzureSubscriptionId: <REPLACE_ME>
@@ -94,7 +95,7 @@ stages:
               marainResourcePrefix: $(Marain_ResourcePrefix)
               workingDirectory: $(Pipeline.Workspace)/marain_instance/Marain.Instance.Deployment
 
-- stage: Deploy PROD Instance
+- stage: Deploy_PROD_Instance
   variables:
     Marain_AzureLocation: <REPLACE_ME>
     Marain_AzureSubscriptionId: <REPLACE_ME>
